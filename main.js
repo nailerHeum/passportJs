@@ -7,7 +7,8 @@ var helmet = require('helmet')
 app.use(helmet());
 var session = require('express-session')
 var FileStore = require('session-file-store')(session)
-
+var flash = require('connect-flash');
+var passport = require('./lib/passport.js')(app);
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({
@@ -21,14 +22,18 @@ app.use(session({
   store: new FileStore()
 }))
 
-var passport = require('passport'),
-  LocalStrategy = require('passport-local').Strategy;
-app.post('/auth/login_process',
-  passport.authenticate('local', {
-    successRedirect: '/',
-    failureRedirect: '/auth/login'
-  }));
-
+app.use(flash());
+app.get('/flash', function(req, res){
+  // Set a flash message by passing the key, followed by the value, to req.flash().
+  req.flash('msg', 'Flash is back!!');
+  res.send('flash');
+});
+ app.get('/flash-display', function(req, res){
+  // Get an array of flash messages by passing the key to req.flash()
+  var fmsg =  req.flash();
+  console.log(fmsg);
+  res.send(fmsg);
+});
 
 app.get('*', function (request, response, next) {
   fs.readdir('./data', function (error, filelist) {
@@ -39,7 +44,7 @@ app.get('*', function (request, response, next) {
 
 var indexRouter = require('./routes/index');
 var topicRouter = require('./routes/topic');
-var authRouter = require('./routes/auth');
+var authRouter = require('./routes/auth')(passport);
 
 app.use('/', indexRouter);
 app.use('/topic', topicRouter);
